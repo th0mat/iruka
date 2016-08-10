@@ -62,7 +62,9 @@ void screenPrintPeriodJSON(const Summary& summary) {
         json += std::to_string(ptr->second.bytes);
         json += ", ";
     }
-    json = json.substr(0, json.length() - 2);
+    if (json.length()>2) { // remove last ; if not empty
+        json = json.substr(0, json.length() - 2);
+    }
     json += " }\n";
     std::cout << json;
 }

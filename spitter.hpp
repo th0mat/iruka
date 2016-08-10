@@ -68,7 +68,6 @@ struct StaData {
 
 
 struct Summary {
-//    int32_t periodLength;
     Summary(std::chrono::time_point<std::chrono::system_clock>);
     StaData corrupted;
     StaData valid;  // incl control frames (which are excluded in the STA numbers)
@@ -78,7 +77,6 @@ struct Summary {
 
 
 struct StationSet {
-//    int32_t periodLength;
     StationSet(std::chrono::time_point<std::chrono::system_clock>);
     std::chrono::time_point<std::chrono::system_clock> periodEnd;
     std::map<uint64_t, uint64_t> stations;  // sta, bytes

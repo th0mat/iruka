@@ -20,8 +20,8 @@ Config::Config() {
     // db
     dbPeriodLength = 60;
     dbLog = true;
-    dbDir = ".";
-    allStationsEver = "allStations.txt";
+    dbDir = "iruka.data";
+    allStationsEver = "allStations.log";
 
     // hopper
     hopsPerSec = 0;

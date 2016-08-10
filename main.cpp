@@ -4,6 +4,7 @@
 #include "config.hpp"
 #include "spitter.hpp"
 #include <csignal>
+#include <cstdlib>
 
 char* mainArgs = nullptr;
 
@@ -33,6 +34,10 @@ void defaultOverride(int argc, char* argv[]){
 int main(int argc, char *argv[]) {
     defaultOverride(argc, argv);
     std::signal(SIGINT, signalHandler);
+    if (Config::get().dbLog) {
+        std::string mkDataDir = "mkdir -p " + Config::get().dbDir;
+        std::system(mkDataDir.c_str());
+    }
     startSpitting();
 }
 
