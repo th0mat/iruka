@@ -24,9 +24,9 @@ void monitor(uint32_t startTime) {
         if (time(nullptr) > startTime) {
             std::ofstream ofs{getFileName(startTime), std::ofstream::app};
             char buffer[100];
-            sprintf(buffer, "%d %llu %d\n",
+            sprintf(buffer, "%d %s %d\n",
                     startTime,
-                    (uint64_t) 0xFFFFFFFFFFFF,
+                    "1000000000000",
                     1
             );
             ofs << buffer;

@@ -117,14 +117,11 @@ void txtLogStationSet(const StationSet& stationSet) {
     std::strftime(fileDate, sizeof(fileDate), "%Y-%m-%d", std::localtime(&dt));
     std::string fileName = Config::get().dbDir + "/" + fileDate + ".log";
     std::ofstream ofs{fileName, std::ofstream::app};
-    // log
-    //char timeStamp[20];
-    //std::strftime(timeStamp, sizeof(timeStamp), "%H:%M:%S", std::localtime(&dt));
     char buffer[100];
     for (auto ptr = stationSet.stations.begin(); ptr != stationSet.stations.end(); ptr++) {
-        sprintf(buffer, "%d %llu %llu\n",
+        sprintf(buffer, "%d %s %llu\n",
                 (uint32_t) dt,
-                ptr->first,
+                longToHex(ptr->first).c_str(),
                 ptr->second
         );
         ofs << buffer;
@@ -141,7 +138,7 @@ void txtLogAllStationsEver(const std::map<uint64_t, SeenTimes>& all){
         return;
     }
     for (auto ptr = all.begin(); ptr != all.end(); ptr++) {
-        std::string line = std::to_string(ptr->first) + " " + std::to_string(ptr->second.first) + " " +
+        std::string line = longToHex(ptr->first) + " " + std::to_string(ptr->second.first) + " " +
                            std::to_string(ptr->second.last) + "\n";
         ofs << line.c_str();
     }

@@ -8,6 +8,7 @@
 #include <ios>
 #include <thread>
 #include <fstream>
+#include <sstream>
 #include "crc.hpp"
 #include "spitter.hpp"
 #include "config.hpp"
@@ -45,12 +46,19 @@ void populateAllStationsEver(){
     std::string path = Config::get().dbDir + "/" + Config::get().allStationsEver;
     std::ifstream ifs{path, std::ifstream::in};
     if (!ifs.is_open()) return;
-    uint64_t sta;
+    std::string sta_str;
+    uint64_t sta_long;
     uint32_t first, last;
     SeenTimes* st;
-    while (ifs >> sta >> first >> last) {
+    std::stringstream ss;
+
+    while (ifs >> sta_str >> first >> last) {
+        ss << std::hex << sta_str;
+        sta_long = strtol(sta_str.c_str(), NULL, 16);
+        //std::cout << "conversion: " << sta_str << " to " << sta_long << std::endl;
         st = new SeenTimes(first, last);
-        allStationsEver.insert(std::pair<uint64_t, SeenTimes>(sta, *st));
+        allStationsEver.insert(std::pair<uint64_t, SeenTimes>(sta_long, *st));
+        ss.str("");
     }
 }
 
