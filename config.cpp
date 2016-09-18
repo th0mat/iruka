@@ -19,6 +19,7 @@ Config::Config() {
 
     // db
     dbPeriodLength = 60;
+    allMacKeepDays = 3;
     dbLog = true;
     dbDir = "iruka.data";
     allStationsEver = "allStations.log";

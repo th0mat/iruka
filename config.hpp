@@ -23,6 +23,7 @@ public:
 
     // db
     int32_t dbPeriodLength;  // for filing in txt db
+    int32_t allMacKeepDays;  // days to keep mac after last seen
     std::string dbDir;
     std::string allStationsEver;
     bool dbLog;

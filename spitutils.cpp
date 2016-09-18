@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iomanip>
 #include <set>
+#include <ctime>
 #include <cstring>
 #include "spitter.hpp"
 #include "spitutils.hpp"
@@ -113,8 +114,9 @@ void screenPrintPacket(const Packet& pkt) {
 void txtLogStationSet(const StationSet& stationSet) {
     // create path from summary date
     time_t dt = std::chrono::duration_cast<seconds>(stationSet.periodEnd.time_since_epoch()).count();
+    time_t dt_date = dt - 1;  // -1 sec to make the 00:00 end time go into previous day
     char fileDate[20];
-    std::strftime(fileDate, sizeof(fileDate), "%Y-%m-%d", std::localtime(&dt));
+    std::strftime(fileDate, sizeof(fileDate), "%Y-%m-%d", std::localtime(&dt_date));
     std::string fileName = Config::get().dbDir + "/" + fileDate + ".log";
     std::ofstream ofs{fileName, std::ofstream::app};
     char buffer[100];
@@ -131,8 +133,19 @@ void txtLogStationSet(const StationSet& stationSet) {
 
 
 void txtLogAllStationsEver(const std::map<uint64_t, SeenTimes>& all){
+    // sort out old lastSeens
+    std::time_t maxAge = std::time(nullptr);
+    maxAge = maxAge - (maxAge % (24 * 3600)) - Config::get().allMacKeepDays * 24 * 3600;
+    std::map<uint64_t, SeenTimes> filtered;
+    for (auto ptr = all.begin(); ptr != all.end(); ptr++) {
+        if (ptr->second.last > maxAge) {
+            filtered.insert(*ptr);
+        }
+    }
+
+    // file
     std::string path = Config::get().dbDir + "/" + Config::get().allStationsEver;
-    std::ofstream ofs{path, std::ifstream::out};
+    std::ofstream ofs{path, std::ofstream::out};
     if (!ofs.is_open()) {
         std::cout << "*** writing all stations log to " << path << " failed" << std::endl;
         return;
