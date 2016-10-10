@@ -17,7 +17,7 @@
 
 
 volatile bool keepHopping = true;
-
+bool filterOut(uint64_t);
 
 std::map<uint64_t, SeenTimes> allStationsEver;
 
@@ -307,7 +307,7 @@ void addToSummaryAndSet(const Packet& pkt) {
     if (pkt.macHeader->type == 2 && pkt.macHeader->toFromDs == 0) return; // exclude data frames not to/from STA
     if (pkt.macHeader->type == 2 && pkt.macHeader->toFromDs == 3) return; // exclude data frames not to/from STA
     uint64_t sta = getStaAddr(pkt);
-    if (sta == 281474976710655) return;  // broadcast
+    if (filterOut(sta)) return;  // broadcast
     // add pkt to currentStationSet
     auto p = currentStationSet->stations.find(sta);
     if (p != currentStationSet->stations.end()) {
@@ -328,6 +328,19 @@ void addToSummaryAndSet(const Packet& pkt) {
         currentSummary->stations[sta] = data;
     }
 };
+
+
+bool filterOut(uint64_t sta) {
+    bool out = false;
+    if (sta == 281474976710655) out = true; // broadcast
+    std::string hex6 = longToHex(sta).substr(0,6);
+    std::string hex4 = longToHex(sta).substr(0,4);
+    if (hex4 == "3333") out = true; // IPv6 multicast
+    if (hex6 == "00005e") out = true; // assigned to IANA
+    if (hex6 == "01005e") out = true; // assigned to IANA
+    if (hex6 == "0180c2") out = true; // spanning trees for bridges
+    return out;
+}
 
 
 void hop(){
