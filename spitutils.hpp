@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include "spitter.hpp"
+#include "sqlite3.h"
 
 
 std::string longToHex(const uint64_t&);
@@ -20,9 +21,8 @@ void screenPrintPeriodJSON(const Summary&);
 void screenPrintPeriodHeader(const Summary&);
 void screenPrintPacket(const Packet&);
 
-void dbLogSession();
-void dbLogPeriod(const Summary&);
-void dbLogPacket(const Packet&);
+void dbCreateTable();
+void dbLogStationSet(const StationSet&);
 
 
 

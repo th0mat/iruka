@@ -36,8 +36,9 @@ void summaryHandler(const Summary& summary) {
 void stationSetHandler(const StationSet& stationSet){
     if (Config::get().dbLog) {
         addToAllStationsEver(stationSet);
-        txtLogAllStationsEver(allStationsEver);
-        txtLogStationSet(stationSet);
+//        txtLogAllStationsEver(allStationsEver);
+//        txtLogStationSet(stationSet);
+        dbLogStationSet(stationSet);
     }
 };
 
@@ -125,7 +126,8 @@ void rawHandler(u_char* args, const pcap_pkthdr* header, const u_char* packet) {
 
 
 int startSpitting() {
-    // add monitor thread in case of dbLogging
+    // add monitor thread in case of dbLogging and open db
+    dbCreateTable();
     std::thread mon;
     if (Config::get().dbLog) mon = std::thread(monitor, startTime);
     // read allStationsEver into memory

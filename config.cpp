@@ -13,9 +13,9 @@ Config::Config() {
     // display
     scrPeriodLength = 60;
     outScrPkts = false;
-    outScrPeriodHdr = true;
-    outScrPeriodDetails = true;
-    outScrPeriodJSON = false;
+    outScrPeriodHdr = false;
+    outScrPeriodDetails = false;
+    outScrPeriodJSON = true;
 
     // db
     dbPeriodLength = 60;

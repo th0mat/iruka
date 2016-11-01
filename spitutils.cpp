@@ -11,6 +11,18 @@
 #include "spitter.hpp"
 #include "spitutils.hpp"
 #include "config.hpp"
+#include <chrono>
+using namespace std::chrono;
+
+sqlite3* db;
+
+void dbCreateTable() {
+    int status = sqlite3_open("papageno.db", &db);
+    std::string sql = "CREATE TABLE traffic(ts INTEGER, mac TEXT, bytes INTEGER, PRIMARY KEY (mac, ts));";
+    sqlite3_exec(db, sql.c_str(), NULL, NULL, NULL);
+    sqlite3_close(db);
+}
+
 
 using std::chrono::microseconds;
 using std::chrono::seconds;
@@ -63,13 +75,12 @@ void screenPrintPeriodJSON(const Summary& summary) {
         json += std::to_string(ptr->second.bytes);
         json += ", ";
     }
-    if (json.length()>2) { // remove last ; if not empty
+    if (json.length() > 2) { // remove last ; if not empty
         json = json.substr(0, json.length() - 2);
     }
     json += " }\n";
     std::cout << json;
 }
-
 
 
 void screenPrintPeriodHeader(const Summary& summary) {
@@ -132,7 +143,7 @@ void txtLogStationSet(const StationSet& stationSet) {
 }
 
 
-void txtLogAllStationsEver(const std::map<uint64_t, SeenTimes>& all){
+void txtLogAllStationsEver(const std::map<uint64_t, SeenTimes>& all) {
     // sort out old lastSeens
     std::time_t maxAge = std::time(nullptr);
     maxAge = maxAge - (maxAge % (24 * 3600)) - Config::get().allMacKeepDays * 24 * 3600;
@@ -184,3 +195,28 @@ void getAddresses(const Packet& pkt, int32_t macPktLength, std::string& addr1, s
     if (macPktLength >= 26) { addr3 = longToHex(addressToLong(const_cast<u_char*>(pkt.macHeader->addr3))); }
 }
 
+void dbLogStationSet(const StationSet& stationSet) {
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    char *zErrMsg;
+    int status = sqlite3_open("papageno.db", &db);
+    std::string sql = "";
+    long dt = std::chrono::duration_cast<seconds>(stationSet.periodEnd.time_since_epoch()).count();
+    for (auto ptr = stationSet.stations.begin(); ptr != stationSet.stations.end(); ptr++) {
+        sql = "INSERT INTO traffic (ts, mac, bytes) VALUES (";
+        sql += std::to_string(dt);
+        sql += ", ";
+        sql += "'";
+        sql += longToHex(ptr->first);
+        sql += "'";
+        sql += ", ";
+        sql += std::to_string(ptr->second);
+        sql += ");";
+        //std::cout << "*** sql: " << sql << "\n";
+        int r = sqlite3_exec(db, sql.c_str(), NULL, NULL, &zErrMsg);
+        if (r != 0) std::cout << "*** error msg: " << zErrMsg << "\n";
+    }
+    sqlite3_close(db);
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
+    std::cout << "*** sqlite write in milli secs: " << duration << "\n";
+}
