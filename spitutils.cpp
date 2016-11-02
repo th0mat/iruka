@@ -1,6 +1,3 @@
-//
-// Created by Thomas Natter on 3/23/16.
-//
 
 #include <fstream>
 #include <sstream>
@@ -14,7 +11,7 @@ using namespace std::chrono;
 sqlite3* db;
 
 void dbCreateTrafficTable() {
-    sqlite3_open("papageno.db", &db);
+    sqlite3_open(Config::get().dbName.c_str(), &db);
     std::string sql = "CREATE TABLE IF NOT EXISTS traffic(ts INTEGER, mac TEXT, bytes INTEGER, PRIMARY KEY (mac, ts));";
     sqlite3_exec(db, sql.c_str(), NULL, NULL, NULL);
     sqlite3_close(db);
@@ -47,7 +44,7 @@ std::string longToHex(const uint64_t& mac64) {
 }
 
 
-void screenPrintPeriodDetails(const Summary& summary) {
+void screenPrintPeriodDetails(const scrSummary& summary) {
     char timeStamp[100];
     time_t tt = std::chrono::duration_cast<seconds>(summary.periodEnd.time_since_epoch()).count();
     std::strftime(timeStamp, sizeof(timeStamp), "%Y-%m-%d %H:%M.%S", std::localtime(&tt));
@@ -62,7 +59,7 @@ void screenPrintPeriodDetails(const Summary& summary) {
 }
 
 
-void screenPrintPeriodJSON(const Summary& summary) {
+void screenPrintPeriodJSON(const scrSummary& summary) {
     std::string json = "{ ";
     for (auto ptr = summary.stations.begin(); ptr != summary.stations.end(); ptr++) {
         json += '"';
@@ -80,7 +77,7 @@ void screenPrintPeriodJSON(const Summary& summary) {
 }
 
 
-void screenPrintPeriodHeader(const Summary& summary) {
+void screenPrintPeriodHeader(const scrSummary& summary) {
     char timeStamp[100];
     time_t tt = std::chrono::duration_cast<seconds>(summary.periodEnd.time_since_epoch()).count();
     std::strftime(timeStamp, sizeof(timeStamp), "%Y-%m-%d %H:%M.%S", std::localtime(&tt));
@@ -146,10 +143,10 @@ void getAddresses(const Packet& pkt, int32_t macPktLength, std::string& addr1, s
     if (macPktLength >= 26) { addr3 = longToHex(addressToLong(const_cast<u_char*>(pkt.macHeader->addr3))); }
 }
 
-void dbLogStationSet(const StationSet& stationSet) {
+void dbLogStationSet(const dbSummary& stationSet) {
     //high_resolution_clock::time_point t1 = high_resolution_clock::now();
     char *errMsg;
-    sqlite3_open("papageno.db", &db);
+    sqlite3_open(Config::get().dbName.c_str(), &db);
     std::string sql = "";
     long dt = std::chrono::duration_cast<seconds>(stationSet.periodEnd.time_since_epoch()).count();
     for (auto ptr = stationSet.stations.begin(); ptr != stationSet.stations.end(); ptr++) {

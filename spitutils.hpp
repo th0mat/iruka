@@ -13,13 +13,13 @@
 std::string longToHex(const uint64_t&);
 
 
-void screenPrintPeriodDetails(const Summary&);
-void screenPrintPeriodJSON(const Summary&);
-void screenPrintPeriodHeader(const Summary&);
+void screenPrintPeriodDetails(const scrSummary&);
+void screenPrintPeriodJSON(const scrSummary&);
+void screenPrintPeriodHeader(const scrSummary&);
 void screenPrintPacket(const Packet&);
 
 void dbCreateTrafficTable();
-void dbLogStationSet(const StationSet&);
+void dbLogStationSet(const dbSummary&);
 
 
 char* timeStampFromPkt(const Packet&, char*);

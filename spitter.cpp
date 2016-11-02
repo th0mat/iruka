@@ -10,102 +10,52 @@
 #include <fstream>
 #include <sstream>
 #include "crc.hpp"
-#include "spitter.hpp"
 #include "config.hpp"
 #include "spitutils.hpp"
 #include "monitor.hpp"
 
 
 volatile bool keepHopping = true;
-bool filterOut(uint64_t);
 
-//std::map<uint64_t, SeenTimes> allStationsEver;
+
+bool filterOut(uint64_t);
 
 
 void packetHandler(const Packet& pkt) {
     if (Config::get().outScrPkts) screenPrintPacket(pkt);
 };
 
-void summaryHandler(const Summary& summary) {
+
+void summaryHandler(const scrSummary& summary) {
     if (Config::get().outScrPeriodHdr) screenPrintPeriodHeader(summary);
     if (Config::get().outScrPeriodDetails) screenPrintPeriodDetails(summary);
     if (Config::get().outScrPeriodJSON) screenPrintPeriodJSON(summary);
 };
 
 
-void stationSetHandler(const StationSet& stationSet){
+void stationSetHandler(const dbSummary& stationSet) {
     if (Config::get().dbLog) {
-//        addToAllStationsEver(stationSet);
-//        txtLogAllStationsEver(allStationsEver);
-//        txtLogStationSet(stationSet);
         dbLogStationSet(stationSet);
     }
 };
 
 
-//void populateAllStationsEver(){
-//    std::string path = Config::get().dbDir + "/" + Config::get().allStationsEver;
-//    std::ifstream ifs{path, std::ifstream::in};
-//    if (!ifs.is_open()) return;
-//    std::string sta_str;
-//    uint64_t sta_long;
-//    uint32_t first, last;
-////    SeenTimes* st;
-//    std::stringstream ss;
-//
-//    while (ifs >> sta_str >> first >> last) {
-//        ss << std::hex << sta_str;
-//        sta_long = strtol(sta_str.c_str(), NULL, 16);
-//        //std::cout << "conversion: " << sta_str << " to " << sta_long << std::endl;
-//        //st = new SeenTimes(first, last);
-//        //allStationsEver.insert(std::pair<uint64_t, SeenTimes>(sta_long, *st));
-//        ss.str("");
-//    }
-//}
-
-
-//void addToAllStationsEver(const StationSet& stationSet){
-//    SeenTimes* st;
-//    uint32_t setTime = std::chrono::duration_cast<std::chrono::seconds>(stationSet.periodEnd.time_since_epoch()).count();
-//    for (auto ptr = stationSet.stations.begin(); ptr != stationSet.stations.end(); ptr++) {
-//        // check if already known
-//        auto staFound = allStationsEver.find(ptr->first);
-//        if (staFound == allStationsEver.end()) {
-//        // not found
-//
-//            st = new SeenTimes(setTime, setTime);
-//            allStationsEver.insert(std::pair<uint64_t, SeenTimes>(ptr->first, *st));
-//
-//        } else {
-//        // found
-//            staFound->second.last = setTime;
-//        }
-//
-//    }
-//}
-
-
-
 uint32_t startTime = time(nullptr);
 
 
-Summary::Summary(std::chrono::time_point<std::chrono::system_clock> t_point) :
-        periodEnd{t_point} { }
+scrSummary::scrSummary(std::chrono::time_point<std::chrono::system_clock> t_point) :
+        periodEnd{t_point} {}
 
 
-StationSet::StationSet(std::chrono::time_point<std::chrono::system_clock> t_point) :
-        periodEnd{t_point} { }
+dbSummary::dbSummary(std::chrono::time_point<std::chrono::system_clock> t_point) :
+        periodEnd{t_point} {}
 
 
-
-Summary* currentSummary;
-StationSet* currentStationSet;
-
-
-StaData::StaData() : packets{0}, bytes{0} { };
+scrSummary* currentSummary;
+dbSummary* currentStationSet;
 
 
-//SeenTimes::SeenTimes(uint32_t f, uint32_t l) : first{f}, last{l} {};
+StaData::StaData() : packets{0}, bytes{0} {};
 
 
 /* loop callback function - set in pcap_loop() */
@@ -119,10 +69,9 @@ void rawHandler(u_char* args, const pcap_pkthdr* header, const u_char* packet) {
     RadioTapHeader* radio = const_cast<RadioTapHeader*>(const_radio);
     Packet pkt{crc, timeStampMicroSecs, lengthInclRadioTap, radio, mac};
     checkPeriods(header);
-    addToSummaryAndSet(pkt);
+    addToSummaries(pkt);
     packetHandler(pkt); // for output of pkt
 }
-
 
 
 int startSpitting() {
@@ -130,8 +79,6 @@ int startSpitting() {
     dbCreateTrafficTable();
     std::thread mon;
     if (Config::get().dbLog) mon = std::thread(monitor, startTime);
-    // read allStationsEver into memory
-    //populateAllStationsEver();
     // pcap config
     pcap_t* handle;                        // session handle
     char errbuf[PCAP_ERRBUF_SIZE];         // buff for error string
@@ -146,16 +93,16 @@ int startSpitting() {
         printf("pcap_create failed: %s\n", errbuf);
         return (2);
     }
-    if (pcap_can_set_rfmon(handle) != 1)  std::cout << "***can't set rfmon\n";
+    if (pcap_can_set_rfmon(handle) != 1) std::cout << "***can't set rfmon\n";
     // set monitor mode
     if (pcap_set_rfmon(handle, 1) != 0) {
         printf("pcap_set_rfmon failed");
     }
     // snaplen -1 does not work on rpi
-    if (pcap_set_snaplen(handle, -1) !=0) {
+    if (pcap_set_snaplen(handle, -1) != 0) {
         printf("pcap_set_snaplen failed");
     };          // -1: full pkt
-    if (pcap_set_timeout(handle, 500) !=0) {
+    if (pcap_set_timeout(handle, 500) != 0) {
         printf("pcap_set_timeout failed");
     };         // millisec
     int status = pcap_activate(handle);
@@ -181,13 +128,13 @@ int startSpitting() {
         t1.detach();
     }
     // initialize
-    currentSummary = new Summary(std::chrono::time_point<std::chrono::system_clock>() +
-                                          std::chrono::seconds(startTime - startTime % Config::get().scrPeriodLength +
-                                                               Config::get().scrPeriodLength));
+    currentSummary = new scrSummary(std::chrono::time_point<std::chrono::system_clock>() +
+                                    std::chrono::seconds(startTime - startTime % Config::get().scrPeriodLength +
+                                                         Config::get().scrPeriodLength));
 
-    currentStationSet = new StationSet(std::chrono::time_point<std::chrono::system_clock>() +
-                                                   std::chrono::seconds(startTime - startTime % Config::get().dbPeriodLength +
-                                                                        Config::get().dbPeriodLength));
+    currentStationSet = new dbSummary(std::chrono::time_point<std::chrono::system_clock>() +
+                                      std::chrono::seconds(startTime - startTime % Config::get().dbPeriodLength +
+                                                           Config::get().dbPeriodLength));
 
 
 
@@ -201,7 +148,6 @@ int startSpitting() {
     }
     return 0;
 }
-
 
 
 u_short getRadioTapLength(const u_char* packet) {
@@ -226,7 +172,8 @@ void checkPeriods(const pcap_pkthdr* header) {
     if (nowTime >= currentStationSet->periodEnd) {
         stationSetHandler(*currentStationSet);
         currentStationSet->stations.clear();
-        currentStationSet->periodEnd = currentStationSet->periodEnd + std::chrono::seconds(Config::get().dbPeriodLength);
+        currentStationSet->periodEnd =
+                currentStationSet->periodEnd + std::chrono::seconds(Config::get().dbPeriodLength);
     }
 }
 
@@ -281,8 +228,6 @@ namespace PktTypes {
 };
 
 
-
-
 uint64_t getStaAddr(const Packet& pkt) {
     int no = 0;
     if (pkt.macHeader->type == 0) { no = PktTypes::t0[pkt.macHeader->subtype]; }
@@ -295,7 +240,7 @@ uint64_t getStaAddr(const Packet& pkt) {
 }
 
 
-void addToSummaryAndSet(const Packet& pkt) {
+void addToSummaries(const Packet& pkt) {
     // if corrupted, add to corrupted
     if (!pkt.crc) {
         currentSummary->corrupted.bytes += pkt.lengthInclRadioTap;
@@ -334,8 +279,8 @@ void addToSummaryAndSet(const Packet& pkt) {
 bool filterOut(uint64_t sta) {
     bool out = false;
     if (sta == 281474976710655) out = true; // broadcast
-    std::string hex6 = longToHex(sta).substr(0,6);
-    std::string hex4 = longToHex(sta).substr(0,4);
+    std::string hex6 = longToHex(sta).substr(0, 6);
+    std::string hex4 = longToHex(sta).substr(0, 4);
     if (hex4 == "3333") out = true; // IPv6 multicast
     if (hex6 == "00005e") out = true; // assigned to IANA
     if (hex6 == "01005e") out = true; // assigned to IANA
@@ -344,7 +289,7 @@ bool filterOut(uint64_t sta) {
 }
 
 
-void hop(){
+void hop() {
     Config config = Config::get();
     std::system("sudo /bin/bash -c 'airport en0 -z'");
     int c;

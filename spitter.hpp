@@ -67,8 +67,8 @@ struct StaData {
 };
 
 
-struct Summary {
-    Summary(std::chrono::time_point<std::chrono::system_clock>);
+struct scrSummary {
+    scrSummary(std::chrono::time_point<std::chrono::system_clock>);
     StaData corrupted;
     StaData valid;  // incl control frames (which are excluded in the STA numbers)
     std::chrono::time_point<std::chrono::system_clock> periodEnd;
@@ -76,21 +76,12 @@ struct Summary {
 };
 
 
-struct StationSet {
-    StationSet(std::chrono::time_point<std::chrono::system_clock>);
+struct dbSummary {
+    dbSummary(std::chrono::time_point<std::chrono::system_clock>);
     std::chrono::time_point<std::chrono::system_clock> periodEnd;
     std::map<uint64_t, uint64_t> stations;  // sta, bytes
 
 };
-
-//struct SeenTimes {
-//    uint32_t first;
-//    uint32_t last;
-//    SeenTimes(uint32_t, uint32_t);
-//};
-//
-
-//std::map<uint64_t, SeenTimes> allStationsEver;
 
 
 void rawHandler(u_char *args, const pcap_pkthdr *header, const u_char *packet);
@@ -105,10 +96,7 @@ u_short getRadioTapLength(const u_char*);
 void checkPeriods(const pcap_pkthdr*);
 
 
-void addToSummaryAndSet(const Packet&);
-
-
-//void addToAllStationsEver(const StationSet&);
+void addToSummaries(const Packet&);
 
 
 void hop();

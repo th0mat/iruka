@@ -4,9 +4,7 @@
 #include "config.hpp"
 #include "spitter.hpp"
 #include <csignal>
-#include <cstdlib>
 
-char* mainArgs = nullptr;
 
 // signal handling
 void signalHandler( int signum ) {
