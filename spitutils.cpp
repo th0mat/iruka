@@ -6,19 +6,16 @@
 #include <sstream>
 #include <iomanip>
 #include <set>
-#include <ctime>
-#include <cstring>
 #include "spitter.hpp"
 #include "spitutils.hpp"
-#include "config.hpp"
 #include <chrono>
 using namespace std::chrono;
 
 sqlite3* db;
 
-void dbCreateTable() {
-    int status = sqlite3_open("papageno.db", &db);
-    std::string sql = "CREATE TABLE traffic(ts INTEGER, mac TEXT, bytes INTEGER, PRIMARY KEY (mac, ts));";
+void dbCreateTrafficTable() {
+    sqlite3_open("papageno.db", &db);
+    std::string sql = "CREATE TABLE IF NOT EXISTS traffic(ts INTEGER, mac TEXT, bytes INTEGER, PRIMARY KEY (mac, ts));";
     sqlite3_exec(db, sql.c_str(), NULL, NULL, NULL);
     sqlite3_close(db);
 }
@@ -122,52 +119,6 @@ void screenPrintPacket(const Packet& pkt) {
 }
 
 
-void txtLogStationSet(const StationSet& stationSet) {
-    // create path from summary date
-    time_t dt = std::chrono::duration_cast<seconds>(stationSet.periodEnd.time_since_epoch()).count();
-    time_t dt_date = dt - 1;  // -1 sec to make the 00:00 end time go into previous day
-    char fileDate[20];
-    std::strftime(fileDate, sizeof(fileDate), "%Y-%m-%d", std::localtime(&dt_date));
-    std::string fileName = Config::get().dbDir + "/" + fileDate + ".log";
-    std::ofstream ofs{fileName, std::ofstream::app};
-    char buffer[100];
-    for (auto ptr = stationSet.stations.begin(); ptr != stationSet.stations.end(); ptr++) {
-        sprintf(buffer, "%d %s %llu\n",
-                (uint32_t) dt,
-                longToHex(ptr->first).c_str(),
-                ptr->second
-        );
-        ofs << buffer;
-    }
-    ofs.close();
-}
-
-
-void txtLogAllStationsEver(const std::map<uint64_t, SeenTimes>& all) {
-    // sort out old lastSeens
-    std::time_t maxAge = std::time(nullptr);
-    maxAge = maxAge - (maxAge % (24 * 3600)) - Config::get().allMacKeepDays * 24 * 3600;
-    std::map<uint64_t, SeenTimes> filtered;
-    for (auto ptr = all.begin(); ptr != all.end(); ptr++) {
-        if (ptr->second.last > maxAge) {
-            filtered.insert(*ptr);
-        }
-    }
-
-    // file
-    std::string path = Config::get().dbDir + "/" + Config::get().allStationsEver;
-    std::ofstream ofs{path, std::ofstream::out};
-    if (!ofs.is_open()) {
-        std::cout << "*** writing all stations log to " << path << " failed" << std::endl;
-        return;
-    }
-    for (auto ptr = all.begin(); ptr != all.end(); ptr++) {
-        std::string line = longToHex(ptr->first) + " " + std::to_string(ptr->second.first) + " " +
-                           std::to_string(ptr->second.last) + "\n";
-        ofs << line.c_str();
-    }
-};
-
 
 char* timeStampFromPkt(const Packet& pkt, char* timeStamp) {
     t_point pkt_t_point = t_point();
@@ -196,9 +147,9 @@ void getAddresses(const Packet& pkt, int32_t macPktLength, std::string& addr1, s
 }
 
 void dbLogStationSet(const StationSet& stationSet) {
-    high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    char *zErrMsg;
-    int status = sqlite3_open("papageno.db", &db);
+    //high_resolution_clock::time_point t1 = high_resolution_clock::now();
+    char *errMsg;
+    sqlite3_open("papageno.db", &db);
     std::string sql = "";
     long dt = std::chrono::duration_cast<seconds>(stationSet.periodEnd.time_since_epoch()).count();
     for (auto ptr = stationSet.stations.begin(); ptr != stationSet.stations.end(); ptr++) {
@@ -212,11 +163,11 @@ void dbLogStationSet(const StationSet& stationSet) {
         sql += std::to_string(ptr->second);
         sql += ");";
         //std::cout << "*** sql: " << sql << "\n";
-        int r = sqlite3_exec(db, sql.c_str(), NULL, NULL, &zErrMsg);
-        if (r != 0) std::cout << "*** error msg: " << zErrMsg << "\n";
+        int r = sqlite3_exec(db, sql.c_str(), NULL, NULL, &errMsg);
+        if (r != 0) std::cout << "*** error during traffic table insert: " << errMsg << "\n";
     }
     sqlite3_close(db);
-    high_resolution_clock::time_point t2 = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
-    std::cout << "*** sqlite write in milli secs: " << duration << "\n";
+    //high_resolution_clock::time_point t2 = high_resolution_clock::now();
+    //auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
+    //std::cout << "*** sqlite write in milli secs: " << duration << "\n";
 }

@@ -83,12 +83,12 @@ struct StationSet {
 
 };
 
-struct SeenTimes {
-    uint32_t first;
-    uint32_t last;
-    SeenTimes(uint32_t, uint32_t);
-};
-
+//struct SeenTimes {
+//    uint32_t first;
+//    uint32_t last;
+//    SeenTimes(uint32_t, uint32_t);
+//};
+//
 
 //std::map<uint64_t, SeenTimes> allStationsEver;
 
@@ -108,7 +108,7 @@ void checkPeriods(const pcap_pkthdr*);
 void addToSummaryAndSet(const Packet&);
 
 
-void addToAllStationsEver(const StationSet&);
+//void addToAllStationsEver(const StationSet&);
 
 
 void hop();

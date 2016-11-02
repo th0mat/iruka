@@ -19,7 +19,7 @@
 volatile bool keepHopping = true;
 bool filterOut(uint64_t);
 
-std::map<uint64_t, SeenTimes> allStationsEver;
+//std::map<uint64_t, SeenTimes> allStationsEver;
 
 
 void packetHandler(const Packet& pkt) {
@@ -35,7 +35,7 @@ void summaryHandler(const Summary& summary) {
 
 void stationSetHandler(const StationSet& stationSet){
     if (Config::get().dbLog) {
-        addToAllStationsEver(stationSet);
+//        addToAllStationsEver(stationSet);
 //        txtLogAllStationsEver(allStationsEver);
 //        txtLogStationSet(stationSet);
         dbLogStationSet(stationSet);
@@ -43,46 +43,46 @@ void stationSetHandler(const StationSet& stationSet){
 };
 
 
-void populateAllStationsEver(){
-    std::string path = Config::get().dbDir + "/" + Config::get().allStationsEver;
-    std::ifstream ifs{path, std::ifstream::in};
-    if (!ifs.is_open()) return;
-    std::string sta_str;
-    uint64_t sta_long;
-    uint32_t first, last;
-    SeenTimes* st;
-    std::stringstream ss;
+//void populateAllStationsEver(){
+//    std::string path = Config::get().dbDir + "/" + Config::get().allStationsEver;
+//    std::ifstream ifs{path, std::ifstream::in};
+//    if (!ifs.is_open()) return;
+//    std::string sta_str;
+//    uint64_t sta_long;
+//    uint32_t first, last;
+////    SeenTimes* st;
+//    std::stringstream ss;
+//
+//    while (ifs >> sta_str >> first >> last) {
+//        ss << std::hex << sta_str;
+//        sta_long = strtol(sta_str.c_str(), NULL, 16);
+//        //std::cout << "conversion: " << sta_str << " to " << sta_long << std::endl;
+//        //st = new SeenTimes(first, last);
+//        //allStationsEver.insert(std::pair<uint64_t, SeenTimes>(sta_long, *st));
+//        ss.str("");
+//    }
+//}
 
-    while (ifs >> sta_str >> first >> last) {
-        ss << std::hex << sta_str;
-        sta_long = strtol(sta_str.c_str(), NULL, 16);
-        //std::cout << "conversion: " << sta_str << " to " << sta_long << std::endl;
-        st = new SeenTimes(first, last);
-        allStationsEver.insert(std::pair<uint64_t, SeenTimes>(sta_long, *st));
-        ss.str("");
-    }
-}
 
-
-void addToAllStationsEver(const StationSet& stationSet){
-    SeenTimes* st;
-    uint32_t setTime = std::chrono::duration_cast<std::chrono::seconds>(stationSet.periodEnd.time_since_epoch()).count();
-    for (auto ptr = stationSet.stations.begin(); ptr != stationSet.stations.end(); ptr++) {
-        // check if already known
-        auto staFound = allStationsEver.find(ptr->first);
-        if (staFound == allStationsEver.end()) {
-        // not found
-
-            st = new SeenTimes(setTime, setTime);
-            allStationsEver.insert(std::pair<uint64_t, SeenTimes>(ptr->first, *st));
-
-        } else {
-        // found
-            staFound->second.last = setTime;
-        }
-
-    }
-}
+//void addToAllStationsEver(const StationSet& stationSet){
+//    SeenTimes* st;
+//    uint32_t setTime = std::chrono::duration_cast<std::chrono::seconds>(stationSet.periodEnd.time_since_epoch()).count();
+//    for (auto ptr = stationSet.stations.begin(); ptr != stationSet.stations.end(); ptr++) {
+//        // check if already known
+//        auto staFound = allStationsEver.find(ptr->first);
+//        if (staFound == allStationsEver.end()) {
+//        // not found
+//
+//            st = new SeenTimes(setTime, setTime);
+//            allStationsEver.insert(std::pair<uint64_t, SeenTimes>(ptr->first, *st));
+//
+//        } else {
+//        // found
+//            staFound->second.last = setTime;
+//        }
+//
+//    }
+//}
 
 
 
@@ -105,7 +105,7 @@ StationSet* currentStationSet;
 StaData::StaData() : packets{0}, bytes{0} { };
 
 
-SeenTimes::SeenTimes(uint32_t f, uint32_t l) : first{f}, last{l} {};
+//SeenTimes::SeenTimes(uint32_t f, uint32_t l) : first{f}, last{l} {};
 
 
 /* loop callback function - set in pcap_loop() */
@@ -127,11 +127,11 @@ void rawHandler(u_char* args, const pcap_pkthdr* header, const u_char* packet) {
 
 int startSpitting() {
     // add monitor thread in case of dbLogging and open db
-    dbCreateTable();
+    dbCreateTrafficTable();
     std::thread mon;
     if (Config::get().dbLog) mon = std::thread(monitor, startTime);
     // read allStationsEver into memory
-    populateAllStationsEver();
+    //populateAllStationsEver();
     // pcap config
     pcap_t* handle;                        // session handle
     char errbuf[PCAP_ERRBUF_SIZE];         // buff for error string
@@ -217,7 +217,6 @@ void checkPeriods(const pcap_pkthdr* header) {
 
     if (nowTime >= currentSummary->periodEnd) {
         summaryHandler(*currentSummary);
-        // Todo: period jump defense
         currentSummary->periodEnd = currentSummary->periodEnd + std::chrono::seconds(Config::get().scrPeriodLength);
         currentSummary->stations.clear();
         currentSummary->corrupted = StaData();

@@ -18,11 +18,10 @@ Config::Config() {
     outScrPeriodJSON = true;
 
     // db
-    dbPeriodLength = 60;
-    allMacKeepDays = 3;
     dbLog = true;
-    dbDir = "iruka.data";
-    allStationsEver = "allStations.log";
+    dbPeriodLength = 60;
+    dbDir = "";
+    dbName = "papageno.db";
 
     // hopper
     hopsPerSec = 0;

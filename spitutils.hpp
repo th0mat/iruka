@@ -12,18 +12,14 @@
 
 std::string longToHex(const uint64_t&);
 
-void txtLogStationSet(const StationSet&);
-void txtLogAllStationsEver(const std::map<uint64_t, SeenTimes>&);
-
 
 void screenPrintPeriodDetails(const Summary&);
 void screenPrintPeriodJSON(const Summary&);
 void screenPrintPeriodHeader(const Summary&);
 void screenPrintPacket(const Packet&);
 
-void dbCreateTable();
+void dbCreateTrafficTable();
 void dbLogStationSet(const StationSet&);
-
 
 
 char* timeStampFromPkt(const Packet&, char*);

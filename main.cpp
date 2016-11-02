@@ -34,7 +34,7 @@ void defaultOverride(int argc, char* argv[]){
 int main(int argc, char *argv[]) {
     defaultOverride(argc, argv);
     std::signal(SIGINT, signalHandler);
-    if (Config::get().dbLog) {
+    if (Config::get().dbLog && (Config::get().dbDir != "")) {
         std::string mkDataDir = "mkdir -p " + Config::get().dbDir;
         std::system(mkDataDir.c_str());
     }

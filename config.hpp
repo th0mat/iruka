@@ -22,11 +22,10 @@ public:
     std::string bpf;
 
     // db
-    int32_t dbPeriodLength;  // for filing in txt db
-    int32_t allMacKeepDays;  // days to keep mac after last seen
-    std::string dbDir;
-    std::string allStationsEver;
     bool dbLog;
+    int32_t dbPeriodLength;  // for filing in txt db
+    std::string dbDir;
+    std::string dbName;
 
     // display
     int32_t scrPeriodLength;  // for display of traffic information
