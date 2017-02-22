@@ -90,36 +90,36 @@ int startSpitting() {
     // SpitterConfig config;
     handle = pcap_create(Config::get().device.c_str(), errbuf);
     if (handle == NULL) {
-        printf("pcap_create failed: %s\n", errbuf);
+        printf("*** pcap_create failed: %s\n", errbuf);
         return (2);
     }
-    if (pcap_can_set_rfmon(handle) != 1) std::cout << "***can't set rfmon\n";
+    if (pcap_can_set_rfmon(handle) != 1) std::cout << "*** can't set rfmon\n";
     // set monitor mode
     if (pcap_set_rfmon(handle, 1) != 0) {
-        printf("pcap_set_rfmon failed");
+        printf("*** pcap_set_rfmon failed");
     }
     // snaplen -1 does not work on rpi
     if (pcap_set_snaplen(handle, -1) != 0) {
-        printf("pcap_set_snaplen failed");
+        printf("*** pcap_set_snaplen failed");
     };          // -1: full pkt
     if (pcap_set_timeout(handle, 500) != 0) {
-        printf("pcap_set_timeout failed");
+        printf("*** pcap_set_timeout failed");
     };         // millisec
     int status = pcap_activate(handle);
-    if (status != 0) printf("***pcap_activate status returned: %d \n", status);
+    if (status != 0) printf("*** pcap_activate status returned: %d \n", status);
     // check for link layer
     if (pcap_datalink(handle) != 127) {
-        printf("link layer: %d \n", pcap_datalink(handle));
-        printf("device %s doesn't exist or provide RadioTap headers\n", Config::get().device.c_str());
+        printf("*** link layer: %d \n", pcap_datalink(handle));
+        printf("*** device %s doesn't exist or provide RadioTap headers\n", Config::get().device.c_str());
         return (2);
     }
     // compile and apply BPF
     if (pcap_compile(handle, &fp, Config::get().bpf.c_str(), 0, net) == -1) {
-        printf("failed to parse filter %s: %s\n", Config::get().bpf.c_str(), pcap_geterr(handle));
+        printf("*** failed to parse filter %s: %s\n", Config::get().bpf.c_str(), pcap_geterr(handle));
         return (2);
     }
     if (pcap_setfilter(handle, &fp) == -1) {
-        printf("failed to install filter %s: %s\n", Config::get().bpf.c_str(), pcap_geterr(handle));
+        printf("*** failed to install filter %s: %s\n", Config::get().bpf.c_str(), pcap_geterr(handle));
         return (2);
     }
     // start channel hopping
