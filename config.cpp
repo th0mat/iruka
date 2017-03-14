@@ -15,7 +15,7 @@ Config::Config() {
     outScrPkts = false;
     outScrPeriodHdr = false;
     outScrPeriodDetails = false;
-    outScrPeriodJSON = true;
+    outScrPeriodJSON = false;
 
     // db
     dbLog = true;

@@ -73,7 +73,7 @@ void screenPrintPeriodJSON(const scrSummary& summary) {
         json = json.substr(0, json.length() - 2);
     }
     json += " }\n";
-    std::cout << json;
+    std::cout << json << std::flush;
 }
 
 

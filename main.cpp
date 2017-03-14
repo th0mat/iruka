@@ -15,8 +15,11 @@ void signalHandler( int signum ) {
 
 
 void defaultOverride(int argc, char* argv[]){
-    if (argc == 1) return;
-    std::string input = argv[1];
+    // set the interface
+    std::string dev(argv[1]);
+    Config::get().device = dev;
+    if (argc == 2) return;
+    std::string input = argv[2];
     if (input == "json") {
         Config::get().scrPeriodLength = 2;
         Config::get().outScrPeriodDetails = false;
@@ -30,6 +33,10 @@ void defaultOverride(int argc, char* argv[]){
 
 // program start
 int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        std::cout << "*** missing wi-fi interface argument\n";
+        exit(1);
+    }
     defaultOverride(argc, argv);
     std::signal(SIGINT, signalHandler);
     if (Config::get().dbLog && (Config::get().dbDir != "")) {
